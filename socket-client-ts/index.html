@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Socket Client TS + Vite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body style="padding:20px; font-family:sans-serif">
+
+    <h1>Socket.IO Client</h1>
+
+    <p>
+      Estado del servidor:
+      <span id="lblOn" style="color:green; display:none">Online</span>
+      <span id="lblOff" style="color:red">Offline</span>
+    </p>
+
+    <p>
+      ID del cliente: <span id="clientId" style="color:blue"></span>
+    </p>
+
+    <!-- Mensaje general -->
+    <h3>Mensaje general</h3>
+    <input id="txtMensajeGeneral" placeholder="Escribe un mensaje general…" />
+    <button id="btnEnviarGeneral">Enviar general</button>
+
+    <!-- Mensaje privado -->
+    <h3>Mensaje privado</h3>
+    <select id="selectClientes"></select>
+    <input id="txtMensajePrivado" placeholder="Escribe un mensaje privado…" />
+    <button id="btnEnviarPrivado">Enviar privado</button>
+
+    <!-- Selección de salas -->
+    <h3>Enviar mensaje a sala:</h3>
+    <select id="selectSalas">
+      <option value="Aldeanos">Aldeanos</option>
+      <option value="Lobos">Lobos</option>
+    </select>
+    <input id="txtMensajeSala" placeholder="Mensaje a sala…" />
+    <button id="btnEnviarSala">Enviar</button>
+
+    <h3>Mensajes recibidos</h3>
+    <ul id="messages"></ul>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
