@@ -17,11 +17,11 @@ export class WebsocketsGateway {
 
   // ----------------- Conexión / Desconexión -----------------
   handleConnection(client: Socket) {
-    this.logger.log(`Cliente conectado: ${client.id}`);
+    this.logger.verbose(`Cliente conectado: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Cliente desconectado: ${client.id}`);
+    this.logger.error(`Cliente desconectado: ${client.id}`);
   }
 
   // ----------------- Mensaje general -----------------
@@ -84,11 +84,11 @@ export class WebsocketsGateway {
 
     if (salaAnterior) {
       client.leave(salaAnterior);
-      this.logger.log(`Socket ${client.id} salió de ${salaAnterior}`);
+      this.logger.debug(`Socket ${client.id} salió de ${salaAnterior}`);
     }
 
     client.join(salaNueva);
-    this.logger.log(`Socket ${client.id} se unió a ${salaNueva}`);
+    this.logger.debug(`Socket ${client.id} se unió a ${salaNueva}`);
 
     return `Ahora estás en la sala ${salaNueva}`;
   }
