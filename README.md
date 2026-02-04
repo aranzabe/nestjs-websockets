@@ -36,6 +36,18 @@ yarn add @nestjs/websockets
 
 💡 **Nota**: `@nestjs/websockets` depende del adaptador `@nestjs/platform-socket.io`. El adaptador permite que NestJS trabaje con Socket.IO de manera “oficial”.
 
+Seguimos usando **socket.io** porque permite:
+
+- rooms
+- broadcast
+- reconexión automática
+
+| Paquete                      | Propósito                                         |
+| ---------------------------- | ------------------------------------------------- |
+| `@nestjs/platform-socket.io` | Adapter de NestJS para usar Socket.IO             |
+| `socket.io`                  | Servidor real de Socket.IO                        |
+| `@types/socket.io`           | Tipos para TypeScript (si tu versión no los trae) |
+
 ---
 
 ## 3️⃣ Generar un recurso para los WebSockets (opcional)
@@ -158,7 +170,87 @@ export class WebsocketsModule {}
 
 `WebsocketsService` sirve si quieres guardar mensajes en base de datos o lógica adicional.
 
+
 ---
+En el ejemplo hemos hecho persistencia con Mongo / mongoose. Para la configuración del proyecto para Mongo ver el ejemplo correspondiente.
+
+En nuestro caso tendremos **websocket.service.ts**:
+```typescript
+import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { User, UserDocument } from './schemas/user.schema';
+import { Message, MessageDocument } from './schemas/message.schema';
+
+@Injectable()
+export class WebsocketsService {
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Message.name) private messageModel: Model<MessageDocument>,
+  ) {}
+
+  // ----------------- Usuarios -----------------
+  async addUser(socketId: string, name: string) {
+    let user = await this.userModel.findOne({ socketId });
+    if (!user) {
+      user = new this.userModel({ socketId, name, connected: true });
+    } else {
+      user.connected = true;
+    }
+    return user.save();
+  }
+
+  async removeUser(socketId: string) {
+    const user = await this.userModel.findOne({ socketId });
+    if (user) {
+      user.connected = false;
+      await user.save();
+    }
+    return user;
+  }
+
+  async getConnectedUsers() {
+    return this.userModel.find({ connected: true }).exec();
+  }
+
+  // ----------------- Mensajes -----------------
+  async saveMessage(fromId: string, content: string, toId?: string, room?: string) {
+    const message = new this.messageModel({ fromId, toId, content, room });
+    return message.save();
+  }
+
+  async getMessagesByRoom(room: string) {
+    return this.messageModel.find({ room }).sort({ createdAt: 1 }).exec();
+  }
+
+  async getPrivateMessages(userA: string, userB: string) {
+    return this.messageModel
+      .find({
+        $or: [
+          { fromId: userA, toId: userB },
+          { fromId: userB, toId: userA },
+        ],
+      })
+      .sort({ createdAt: 1 })
+      .exec();
+  }
+}
+```
+Con los métodos de persistencia que serán llamados desde **websocket.gateway.ts**., por ejemplo:
+
+```typescript
+  // ----------------- Conexión / Desconexión -----------------
+  handleConnection(client: Socket) {
+    this.logger.verbose(`Cliente conectado: ${client.id}`);
+    this.websocketsService.addUser(client.id, 'NombreUsuario');   //<-- Aquí usaríamos el servicio de websockets para la persisatencia.
+  }
+
+  handleDisconnect(client: Socket) {
+    this.logger.error(`Cliente desconectado: ${client.id}`);
+    this.websocketsService.removeUser(client.id); //<-- Aquí usaríamos el servicio de websockets para la persisatencia.
+  }
+
+```
 
 ## 6️⃣ Importar módulo en `app.module.ts`
 
@@ -171,6 +263,8 @@ import { WebsocketsModule } from './websockets/websockets.module';
 })
 export class AppModule {}
 ```
+
+
 
 ---
 

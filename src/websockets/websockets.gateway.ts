@@ -1,6 +1,7 @@
 import { WebSocketGateway, WebSocketServer, ConnectedSocket, SubscribeMessage, MessageBody } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Injectable, Logger } from '@nestjs/common';
+import { WebsocketsService } from './websockets.service';
 
 @WebSocketGateway({
   cors: {
@@ -14,19 +15,23 @@ export class WebsocketsGateway {
   io: Server;
 
   private logger = new Logger('WebsocketsGateway');
+  constructor(private readonly websocketsService: WebsocketsService) {}
 
   // ----------------- Conexión / Desconexión -----------------
   handleConnection(client: Socket) {
     this.logger.verbose(`Cliente conectado: ${client.id}`);
+    this.websocketsService.addUser(client.id, 'NombreUsuario');   //<-- Aquí usaríamos el servicio de websockets para la persisatencia.
   }
 
   handleDisconnect(client: Socket) {
     this.logger.error(`Cliente desconectado: ${client.id}`);
+    this.websocketsService.removeUser(client.id); //<-- Aquí usaríamos el servicio de websockets para la persisatencia.
   }
 
   // ----------------- Mensaje general -----------------
   @SubscribeMessage('enviar-mensaje')
-  handleMensajeGeneral(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
+  async handleMensajeGeneral(@MessageBody() payload: any, @ConnectedSocket() client: Socket) {
+    await this.websocketsService.saveMessage(client.id, payload.mensaje); //<-- Aquí usaríamos el servicio de websockets para la persisatencia.
     client.broadcast.emit('recibir-mensaje', payload);
     return { msg: 'Mensaje recibido', id: payload.id, fecha: Date.now() };
   }
